@@ -1,39 +1,41 @@
+// app.js
 const express = require('express');
-const bodyParser = require('body-parser');
+const path = require('path');
 const { body, validationResult } = require('express-validator');
 
-const app = express();
+const app = express(); // ✅ This creates the Express app instance
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
+
+// Set EJS as the view engine
 app.set('view engine', 'ejs');
-app.use(express.static('public'));
+app.set('views', path.join(__dirname, 'views'));
 
 // Routes
 app.get('/', (req, res) => {
-    res.render('index', { errors: [], inputData: {} });
+  res.render('index', { errors: [], name: '', email: '' });
 });
 
 app.post(
-    '/submit',
-    [
-        body('username').notEmpty().withMessage('Username is required'),
-        body('email').isEmail().withMessage('Enter a valid email address'),
-        body('password')
-            .isLength({ min: 6 })
-            .withMessage('Password must be at least 6 characters long')
-    ],
-    (req, res) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.render('index', {
-                errors: errors.array(),
-                inputData: req.body
-            });
-        }
-        res.render('success', { username: req.body.username });
+  '/submit',
+  [
+    body('name').notEmpty().withMessage('Name is required'),
+    body('email').isEmail().withMessage('Valid email required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be 6+ characters'),
+  ],
+  (req, res) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.render('index', { errors: errors.array(), ...req.body });
     }
+
+    // If validation passes, show success page
+    res.render('success');
+  }
 );
 
 // Start server
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
